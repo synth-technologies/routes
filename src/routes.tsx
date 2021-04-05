@@ -2,10 +2,9 @@ import * as React from 'react'
 import { Helmet } from 'react-helmet'
 import { matchPath, Route, RouteComponentProps, Switch, withRouter } from 'react-router'
 import { QueryParamProvider } from 'use-query-params'
-import { isExternal, loginRequired } from './utils'
 
 
-interface MetaData {
+export interface MetaData {
   title?: string
   description?: string
   keywords?: string[]
@@ -13,7 +12,7 @@ interface MetaData {
   faviconUrl: string
 }
 
-interface RouteParams {
+export interface RouteParams {
   meta: MetaData
   path: string
   makePath: (...args: any) => string
@@ -21,11 +20,11 @@ interface RouteParams {
   makeComponent: (props: any) => React.ReactNode
 }
 
-interface RouteSet {
+export interface RouteSet {
   [key: string]: RouteParams
 }
 
-const MetaDataToHelmet = (props: { meta: MetaData, baseDomain: string }) => {
+export const MetaDataToHelmet = (props: { meta: MetaData, baseDomain: string }) => {
   return (
     <Helmet>
       {props.meta?.title && <title>{props.meta.title}</title>}
@@ -42,6 +41,36 @@ const MetaDataToHelmet = (props: { meta: MetaData, baseDomain: string }) => {
   )
 }
 
+export const LoginRequired = (render: (props: RouteComponentProps<any>) => React.ReactNode, isAuthenticated: () => boolean, onNotAuthenticated: () => void) => {
+  return (props: RouteComponentProps<any>) => {
+    if (isAuthenticated()) {
+      return render(props)
+    }
+    onNotAuthenticated()
+    return undefined
+  }
+}
+
+export const IsExternal = (pathOrUrl: string) => {
+  let external = false
+  let target = ""
+  try {
+    if (pathOrUrl.startsWith("//")) {
+      external = true
+      target = "_blank"
+    } else {
+      const parsed = new URL(pathOrUrl)
+      external = parsed.protocol !== ""
+      target = ["https:", "http:"].includes(parsed.protocol) ? "_blank" : ""
+    }
+  } catch (e) {
+    external = false
+    target = ""
+  }
+  return { external, target }
+}
+
+
 export const NavLink = withRouter((
   props: {
     to: string,
@@ -50,7 +79,7 @@ export const NavLink = withRouter((
     beforeGo?: () => void
   } & RouteComponentProps
 ) => {
-  const { external, target } = isExternal(props.to)
+  const { external, target } = IsExternal(props.to)
   const isActive =
     !external &&
     matchPath(props.history.location.pathname, {
@@ -89,7 +118,7 @@ export const Router = (props: { routes: RouteSet, notFound: any, isAuthenticated
                 <>
                   <MetaDataToHelmet meta={routeProps.meta} baseDomain={props.baseDomain} />
                   {routeProps.loginRequired
-                    ? loginRequired(routeProps.makeComponent, props.isAuthenticated, props.onNotAuthenticated)(innerProps)
+                    ? LoginRequired(routeProps.makeComponent, props.isAuthenticated, props.onNotAuthenticated)(innerProps)
                     : routeProps.makeComponent(innerProps)
                   }
                 </>

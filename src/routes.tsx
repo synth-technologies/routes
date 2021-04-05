@@ -1,6 +1,3 @@
-// Import here Polyfills if needed. Recommended core-js (npm i -D core-js)
-// import "core-js/fn/array.find"
-// ...
 import * as React from 'react'
 import { Helmet } from 'react-helmet'
 import { matchPath, Route, RouteComponentProps, Switch, withRouter } from 'react-router'
